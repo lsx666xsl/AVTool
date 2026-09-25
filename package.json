@@ -1,7 +1,7 @@
 {
   "name": "avtool",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "音视频码流分析工具：H.264 码流解析 / SPS 对比 / MP4 结构查看",
   "scripts": {
     "dev": "vite",
