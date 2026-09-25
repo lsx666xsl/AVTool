@@ -119,3 +119,17 @@ export interface TranscodeResult {
   code: number
   errorTail: string
 }
+
+// ============ 应用信息与更新检查 ============
+
+export interface AppInfo {
+  version: string
+  gitSha: string
+}
+
+export interface UpdateInfo {
+  available: boolean
+  latestSha: string
+  message: string
+  date: string
+}

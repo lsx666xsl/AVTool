@@ -3,7 +3,7 @@
  * 纯浏览器环境（npm run dev 调试）回退到内置模拟数据。
  */
 import type { CheckReport, FfProgress, FfmpegEnv, HexData, MediaProbe, ParseResult, SpsCompare } from './types'
-import type { NaluDetail, TranscodeResult } from './types'
+import type { AppInfo, NaluDetail, TranscodeResult, UpdateInfo } from './types'
 import { mockInvoke, mockListenProgress, mockPickFile } from './mock'
 
 export const IS_TAURI: boolean =
@@ -75,6 +75,12 @@ export const api = {
     invoke('ffmpeg_transcode', { request: { input, output, args } }),
 
   ffmpegCancel: (): Promise<boolean> => invoke('ffmpeg_cancel'),
+
+  // ---- 应用信息与更新检查 ----
+
+  appInfo: (): Promise<AppInfo> => invoke('app_info'),
+
+  updateCheck: (): Promise<UpdateInfo> => invoke('update_check'),
 }
 
 /** 订阅 ffmpeg 进度事件，返回取消订阅函数 */

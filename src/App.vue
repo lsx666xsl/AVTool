@@ -1,10 +1,12 @@
 <script setup lang="ts">
-import { ref, watch } from 'vue'
+import { onMounted, ref, watch } from 'vue'
 import AnalyzerView from '@/views/AnalyzerView.vue'
 import CompareView from '@/views/CompareView.vue'
 import PreviewView from '@/views/PreviewView.vue'
 import TranscodeView from '@/views/TranscodeView.vue'
+import { api, IS_TAURI } from '@/bridge'
 import { activeTab, type TabId } from '@/store'
+import type { AppInfo, UpdateInfo } from '@/types'
 
 const TABS: Array<{ id: TabId; icon: string; label: string }> = [
   { id: 'analyzer', icon: '📡', label: '码流分析' },
@@ -26,6 +28,37 @@ function toggleTheme(): void {
   document.documentElement.dataset.theme = theme.value
   localStorage.setItem('avtool-theme', theme.value)
 }
+
+// ---- 更新检查：启动时静默查一次，也可手动触发 ----
+const version = ref('…')
+const update = ref<UpdateInfo | null>(null)
+const updateDismissed = ref(false)
+const checking = ref(false)
+const checkNote = ref('')
+
+async function doCheck(notify: boolean): Promise<void> {
+  if (checking.value) return
+  checking.value = true
+  checkNote.value = ''
+  try {
+    const u = await api.updateCheck()
+    update.value = u
+    updateDismissed.value = false
+    if (!u.available && notify) checkNote.value = '已是最新版本'
+  } catch (e) {
+    if (notify) checkNote.value = `检查失败：${e instanceof Error ? e.message : String(e)}`
+  } finally {
+    checking.value = false
+  }
+}
+
+onMounted(async () => {
+  const info: AppInfo = await api.appInfo()
+  version.value = info.version
+  // 无 git 提交号的构建（异常环境）不启用自动检查；演示模式展示通知效果
+  if (IS_TAURI && !info.gitSha) return
+  void doCheck(false)
+})
 </script>
 
 <template>
@@ -50,9 +83,21 @@ function toggleTheme(): void {
           <span class="nav-label">{{ t.label }}</span>
         </button>
       </nav>
-      <div class="sidebar-footer">v0.2.0</div>
+      <div class="sidebar-footer">
+        <div>v{{ version }}</div>
+        <button class="check-btn" :disabled="checking" @click="doCheck(true)">
+          {{ checking ? '检查中…' : '检查更新' }}
+        </button>
+        <div v-if="checkNote" class="check-note">{{ checkNote }}</div>
+      </div>
     </aside>
     <main class="content">
+      <div v-if="update?.available && !updateDismissed" class="update-bar">
+        <span>
+          🔔 有更新（{{ update.latestSha }} · {{ update.date }}）：{{ update.message }}
+        </span>
+        <button class="ub-close" @click="updateDismissed = true">✕</button>
+      </div>
       <AnalyzerView v-show="tab === 'analyzer'" />
       <CompareView v-show="tab === 'compare'" />
       <PreviewView v-show="tab === 'preview'" />
@@ -160,6 +205,51 @@ function toggleTheme(): void {
   font-size: 10.5px;
   color: var(--text-dim);
   border-top: 1px solid var(--border);
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  align-items: flex-start;
+}
+.check-btn {
+  background: transparent;
+  border: 1px solid var(--border-strong);
+  border-radius: 5px;
+  color: var(--text-muted);
+  font-size: 10.5px;
+  padding: 2px 8px;
+  cursor: pointer;
+}
+.check-btn:hover:not(:disabled) {
+  color: var(--accent);
+  border-color: var(--accent);
+}
+.check-note {
+  font-size: 10.5px;
+  color: var(--text-muted);
+  word-break: break-all;
+}
+.update-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 7px 14px;
+  font-size: 12px;
+  background: var(--accent-soft);
+  border-bottom: 1px solid var(--accent-border);
+  color: var(--text);
+  flex-shrink: 0;
+}
+.ub-close {
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  cursor: pointer;
+  font-size: 13px;
+  padding: 0 4px;
+}
+.ub-close:hover {
+  color: var(--text);
 }
 .content {
   flex: 1;

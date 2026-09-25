@@ -418,6 +418,16 @@ export function mockInvoke<T>(cmd: string, args: Record<string, unknown>): T {
       return { success: true, code: 0, errorTail: '' } as T
     case 'ffmpeg_cancel':
       return true as T
+    case 'app_info':
+      return { version: '0.2.0', gitSha: 'local-dev' } as T
+    case 'update_check':
+      // 演示模式展示"有更新"的通知条效果
+      return {
+        available: true,
+        latestSha: 'd3m0a1b2',
+        message: 'feat: 演示更新通知（浏览器模式无法访问 GitHub）',
+        date: '2026-09-25',
+      } as T
     default:
       throw new Error(`模拟模式未实现命令: ${cmd}`)
   }

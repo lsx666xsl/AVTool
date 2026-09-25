@@ -6,6 +6,7 @@ pub mod ffmpeg;
 pub mod h264;
 pub mod model;
 pub mod mp4;
+pub mod update;
 
 use std::collections::HashMap;
 use std::sync::{Arc, Mutex};
@@ -34,7 +35,9 @@ pub fn run() {
             ffmpeg::ffmpeg_decode_frame,
             ffmpeg::ffmpeg_remux,
             ffmpeg::ffmpeg_transcode,
-            ffmpeg::ffmpeg_cancel
+            ffmpeg::ffmpeg_cancel,
+            update::app_info,
+            update::update_check
         ])
         .run(tauri::generate_context!())
         .expect("AVTool 启动失败");
